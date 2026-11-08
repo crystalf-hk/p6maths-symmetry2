@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>製作軸對稱平面圖形（二）｜聖公會柴灣聖米迦勒小學</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FBF2EC; --surface:#FFFFFF; --surface-2:#FCEEEA; --ink:#2C2433; --muted:#7A6670; --border:#F0D8D1;
+  --red:#C9372C; --blue:#C8426E; --on-blue:#FFFFFF; --gold:#F2B630;
+  --ok:#16794B; --okbg:#E2F3E9; --badbg:#FCE6E3; --tipbg:#E2F2EF; --tipink:#235E5A;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:radial-gradient(circle at 0 0,#F7CBD5 0 150px,transparent 151px),radial-gradient(circle at 100% 100%,#BFE3DD 0 200px,transparent 201px),radial-gradient(circle at 0 100%,#FBE3A8 0 130px,transparent 131px),var(--bg);background-attachment:fixed;min-height:100vh;color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+button{font:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+
+.top{background:rgba(255,255,255,.88);border-bottom:1px solid var(--border)}
+.top-inner{max-width:1260px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand svg{width:46px;height:46px;flex:none}
+.brand h1{margin:0;font-size:1.55rem;font-weight:900;letter-spacing:.06em;line-height:1.2}
+.brand p{margin:0;font-size:.85rem;color:var(--muted)}
+.brand p.school{font-weight:700;color:var(--ink);font-size:.9rem;letter-spacing:.04em}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{min-width:46px;min-height:42px;border-radius:10px;border:2px solid var(--border);background:var(--surface-2);color:var(--ink);font-weight:700;cursor:pointer;padding:0 8px}
+.chip.placed{background:#FBE3EA;color:var(--blue);border-color:#F2BACB}
+.chip[aria-pressed="true"]{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+.chip:disabled{cursor:default;opacity:.7}
+.tabs{display:flex;gap:4px;background:var(--surface-2);padding:5px;border-radius:14px;border:1px solid var(--border);flex-wrap:wrap}
+.tab{border:0;background:transparent;color:var(--muted);font-weight:700;font-size:1rem;padding:8px 16px;border-radius:10px;cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px}
+.tab .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1.5px solid currentColor;font-size:.75rem;line-height:1}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--surface)}
+
+main{max-width:1260px;margin:0 auto;padding:18px 20px 28px}
+.intro h2{margin:0 0 2px;font-size:1.35rem;font-weight:900}
+.intro p{margin:0 0 14px;color:var(--muted);max-width:62ch}
+.work{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px;align-items:start}
+.stage{background:#FFFFFF;border-radius:20px;border:1px solid var(--border);padding:10px;position:relative}
+.stage svg{display:block;width:100%;height:auto;max-height:calc(100vh - 210px);margin:0 auto;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#labSvg{cursor:crosshair}
+#compSvg{cursor:pointer}
+.readout{position:absolute;right:14px;bottom:10px;font-weight:700;color:#1F2A44;background:rgba(255,255,255,.9);padding:2px 10px;border-radius:8px;font-variant-numeric:tabular-nums;font-size:.95rem}
+
+.side{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px}
+.card h3{margin:0 0 8px;font-size:1rem;font-weight:700}
+.card p{margin:0}
+.pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pick button{background:var(--surface-2);border:2px solid transparent;border-radius:12px;padding:6px 4px 4px;cursor:pointer;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.8rem}
+.pick button svg{width:100%;max-width:58px;aspect-ratio:1;background:#fff;border-radius:8px}
+.pick button[aria-pressed="true"]{border-color:var(--blue);background:var(--surface)}
+.pick.text button{font-size:.95rem;padding:10px 4px;font-weight:700}
+
+.slider-head{display:flex;justify-content:space-between;font-weight:700;font-size:.95rem}
+.slider-head output{font-variant-numeric:tabular-nums;color:var(--blue)}
+input[type=range]{width:100%;accent-color:var(--blue);height:34px;margin:2px 0}
+.slider-ends{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted)}
+.btns{display:grid;grid-template-columns:1fr auto;gap:8px}
+.btn{font-weight:700;min-height:46px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink);padding:0 16px;cursor:pointer}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:var(--on-blue)}
+.btn:disabled{opacity:.6;cursor:default}
+.btn.full{width:100%}
+.msg{border-radius:12px;padding:10px 12px;background:var(--tipbg);color:var(--tipink);font-size:.95rem}
+.msg.ok{background:var(--okbg);color:var(--ok)}
+.msg.bad{background:var(--badbg);color:var(--red)}
+.msg .btn{margin-top:8px;min-height:40px}
+.levels{display:flex;flex-direction:column;gap:6px}
+.levels button{text-align:left;background:var(--surface-2);border:2px solid transparent;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--ink);font-weight:500;min-height:44px;display:flex;justify-content:space-between;align-items:center}
+.levels button[aria-pressed="true"]{border-color:var(--blue);font-weight:700;background:var(--surface)}
+.levels .done{color:var(--ok);font-weight:900}
+.progress{font-weight:700;margin-top:6px!important;color:var(--blue)}
+.check{display:flex;gap:10px;align-items:center;min-height:40px;cursor:pointer;font-weight:500}
+.check input{width:20px;height:20px;accent-color:var(--blue)}
+
+.ghost{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:.9}}
+@media (prefers-reduced-motion: reduce){.ghost{animation:none;opacity:.7}}
+@media (max-width:880px){
+  .work{grid-template-columns:1fr}
+  .stage svg{max-height:none}
+  .top-inner{padding:10px 14px}
+  main{padding:14px}
+  .tab{padding:8px 12px;font-size:.95rem}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M23 22 C16 8 4 6 4 16 C4 24 14 26 23 25 Z" fill="#F28C28" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M23 27 C14 27 7 32 9 39 C11 44 20 40 23 31 Z" fill="#F6C33B" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M25 22 C32 8 44 6 44 16 C44 24 34 26 25 25 Z" fill="#F28C28" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M25 27 C34 27 41 32 39 39 C37 44 28 40 25 31 Z" fill="#F6C33B" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="15" r="2.5" fill="#fff"/><circle cx="36" cy="15" r="2.5" fill="#fff"/>
+        <ellipse cx="24" cy="27" rx="2.6" ry="11" fill="#1F2A44"/>
+        <path d="M23 17 Q20 10 17 8 M25 17 Q28 10 31 8" fill="none" stroke="#1F2A44" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="24" y1="1" x2="24" y2="47" stroke="#D43A2F" stroke-width="1.5" stroke-dasharray="3 3"/>
+      </svg>
+      <div>
+        <p class="school">聖公會柴灣聖米迦勒小學</p>
+        <h1>製作軸對稱平面圖形（二）</h1>
+        <p>六年級數學　對稱小教室：有兩條對稱軸的圖形</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="教學環節">
+      <button class="tab" role="tab" data-tab="fold" aria-selected="true"><span class="n">1</span>摺一摺</button>
+      <button class="tab" role="tab" data-tab="complete" aria-selected="false"><span class="n">2</span>補全圖形</button>
+      <button class="tab" role="tab" data-tab="points" aria-selected="false"><span class="n">3</span>找對稱點</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- 1 摺一摺 -->
+  <section id="tab-fold" role="tabpanel">
+    <div class="intro">
+      <h2>摺一摺：這個圖形有幾條對稱軸？</h2>
+      <p>選一個圖形，分別沿豎直和水平的摺線對摺，看看兩邊能不能完全重合。兩次都重合，就是有兩條對稱軸的圖形。</p>
+    </div>
+    <div class="work">
+      <div class="stage">
+        <svg id="foldSvg" viewBox="0 0 400 400" role="img" aria-label="對摺演示"></svg>
+        <div class="readout" id="foldReadout">翻摺角度 0°</div>
+      </div>
+      <aside class="side">
+        <div class="card">
+          <h3>選擇圖形</h3>
+          <div class="pick" id="foldPick"></div>
+        </div>
+        <div class="card">
+          <h3>摺線方向</h3>
+          <div class="pick text" id="foldAxisPick" style="grid-template-columns:1fr 1fr"></div>
+        </div>
+        <div class="card">
+          <div class="slider-head"><span>翻摺角度</span><output id="foldVal">0°</output></div>
+          <input type="range" id="foldRange" min="0" max="180" value="0" aria-label="翻摺角度">
+          <div class="slider-ends"><span>展開 0°</span><span>重合 180°</span></div>
+          <div class="btns" style="margin-top:10px">
+            <button class="btn primary" id="foldPlay">▶ 播放</button>
+            <button class="btn" id="foldReset">重置</button>
+          </div>
+        </div>
+        <div class="msg" id="foldMsg" aria-live="polite"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 2 找對稱點 -->
+  <section id="tab-points" role="tabpanel" hidden>
+    <div class="intro">
+      <h2>找對稱點：另一半的點在哪裏？</h2>
+      <p>先在格子的交點上自己點出所有對稱點，全部點完後按「翻過去驗證」，看看翻過去的點和你點的位置是否重合。</p>
+    </div>
+    <div class="work">
+      <div class="stage">
+        <svg id="labSvg" viewBox="-16 -16 432 432" role="application" aria-label="找對稱點方格"></svg>
+        <div class="readout" id="labReadout" hidden></div>
+      </div>
+      <aside class="side">
+        <div class="card">
+          <h3>任務目標</h3>
+          <p id="labTask"></p>
+          <div class="chips" id="labChips"></div>
+          <p class="progress" id="labProgress"></p>
+        </div>
+        <div class="msg" id="labMsg" aria-live="polite"></div>
+        <button class="btn primary full" id="labCheck" disabled>↔ 翻過去驗證</button>
+        <div class="btns" style="grid-template-columns:1fr 1fr 1fr">
+          <button class="btn" id="labUndo">↶ 復原</button>
+          <button class="btn" id="labHint">💡 提示</button>
+          <button class="btn" id="labReset">重新開始</button>
+        </div>
+        <div class="card">
+          <h3>關卡選擇</h3>
+          <div class="levels" id="labLevels"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 3 補全圖形 -->
+  <section id="tab-complete" role="tabpanel" hidden>
+    <div class="intro">
+      <h2>補全圖形：翻兩次，變出完整圖形</h2>
+      <p>只畫好四分之一！按「開始補全」或拖動滑桿：先沿豎直對稱軸翻，再沿水平對稱軸翻，變成有兩條對稱軸的完整圖形。</p>
+    </div>
+    <div class="work">
+      <div class="stage">
+        <svg id="compSvg" viewBox="0 0 400 400" role="img" aria-label="補全軸對稱圖形"></svg>
+        <div class="readout" id="compReadout">翻摺角度 0°</div>
+      </div>
+      <aside class="side">
+        <div class="card">
+          <div class="btns">
+            <button class="btn primary" id="compPlay">▶ 開始補全</button>
+            <button class="btn" id="compReset">還原</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="slider-head"><span>手動翻摺</span><output id="compVal">0°</output></div>
+          <input type="range" id="compRange" min="0" max="180" value="0" aria-label="手動翻摺角度">
+          <div class="slider-ends"><span>重疊 0°</span><span id="compEndR">完全展開 180°</span></div>
+        </div>
+        <div class="card">
+          <div class="slider-head"><span>圖形不透明度</span><output id="opVal">100%</output></div>
+          <input type="range" id="opRange" min="15" max="100" value="100" aria-label="圖形不透明度">
+        </div>
+        <div class="card">
+          <h3>量一量距離</h3>
+          <p id="compPairHint" style="font-size:.9rem;color:var(--muted)">補全後，按下面的字母或圖上的點，看看兩點離對稱軸多少格。</p>
+          <div class="chips" id="compPairs"></div>
+        </div>
+        <div class="card" hidden>
+          <h3>對稱軸</h3>
+          <div class="pick text" id="compMode"></div>
+        </div>
+        <div class="card">
+          <h3>切換練習圖形</h3>
+          <div class="pick text" id="compPick"></div>
+        </div>
+        <div class="msg" id="compMsg" aria-live="polite">互動提示：把不透明度調低，可以看清楚圖形下面的格線，數一數每個點離對稱軸多少格。</div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const INK = '#1F2A44';
+const PRIME = '′';
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t === b ? 'true' : 'false'));
+  ['fold','points','complete'].forEach(id => { $('#tab-' + id).hidden = id !== b.dataset.tab; });
+}));
+
+/* ---------- animation helper ---------- */
+function makeAnimator(){
+  let raf = null;
+  return {
+    run(from, to, ms, step, done){
+      cancelAnimationFrame(raf);
+      const t0 = performance.now();
+      const tick = now => {
+        const k = Math.min(1, (now - t0) / ms);
+        const e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2;
+        step(from + (to - from) * e);
+        if (k < 1) raf = requestAnimationFrame(tick); else { raf = null; done && done(); }
+      };
+      raf = requestAnimationFrame(tick);
+    },
+    stop(){ cancelAnimationFrame(raf); raf = null; },
+    get busy(){ return raf !== null; }
+  };
+}
+
+/* =========================================================
+   1. 摺一摺
+   ========================================================= */
+const mirror = s => s + `<g transform="translate(400 0) scale(-1 1)">${s}</g>`;
+
+function butterfly(){
+  const pal = ['#E8473B','#F28C28','#F6C33B','#7B4BB7','#2BA39A','#3F6FD8'];
+  const r1 = [190,196], up = [[150,108],[104,78],[62,86],[40,120],[46,162],[84,194]];
+  const r2 = [192,206], lo = [[84,206],[58,238],[64,284],[100,316],[146,306],[176,256]];
+  let s = '';
+  const fan = (root, pts, off) => {
+    for (let i = 0; i < pts.length - 1; i++)
+      s += `<polygon points="${root} ${pts[i]} ${pts[i+1]}" fill="${pal[(i+off)%pal.length]}" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/>`;
+    s += `<polygon points="${root} ${pts.join(' ')}" fill="none" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/>`;
+  };
+  fan(r1, up, 0); fan(r2, lo, 3);
+  [up[1], up[2], up[3], lo[2]].forEach(([x,y], i) => {
+    const root = i < 3 ? r1 : r2;
+    const cx = x + (root[0]-x)*.13, cy = y + (root[1]-y)*.13;
+    s += `<circle cx="${cx}" cy="${cy}" r="6" fill="#fff"/>`;
+  });
+  s += `<path d="M195 126 Q182 94 166 76" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/><circle cx="166" cy="76" r="6" fill="${INK}"/>`;
+  return mirror(s) + `<ellipse cx="200" cy="214" rx="10" ry="74" fill="${INK}"/><circle cx="200" cy="134" r="13" fill="${INK}"/>`;
+}
+
+function mask(){
+  const face = `M200 66 C146 66 104 100 100 168 C96 238 132 306 200 338`;
+  const L = `
+    <path d="M106 148 C76 148 72 216 106 222 Z" fill="#F1D3B0" stroke="${INK}" stroke-width="4"/>
+    <path d="${face} Z" fill="#D8382C"/>
+    <path d="${face}" fill="none" stroke="${INK}" stroke-width="5"/>
+    <path d="M188 146 C162 122 126 126 108 150 C132 142 160 146 188 160 Z" fill="${INK}"/>
+    <path d="M192 180 C168 154 124 156 108 190 C126 208 164 214 192 198 Z" fill="${INK}"/>
+    <ellipse cx="152" cy="186" rx="15" ry="8" fill="#fff"/>
+    <circle cx="155" cy="186" r="5" fill="${INK}"/>
+    <path d="M150 232 C126 252 136 284 170 290 C154 274 152 252 172 242 Z" fill="#fff"/>
+    <path d="M200 268 C178 266 156 280 146 300 C166 326 188 338 200 338 Z" fill="${INK}"/>`;
+  const mid = `
+    <path d="M200 70 C186 104 186 150 200 176 C214 150 214 104 200 70 Z" fill="#fff"/>
+    <path d="M200 196 C190 220 186 238 200 250 C214 238 210 220 200 196 Z" fill="${INK}"/>
+    <path d="M182 286 C190 292 210 292 218 286 C212 300 188 300 182 286 Z" fill="#D8382C"/>`;
+  return mirror(L) + mid;
+}
+
+function noEntry(){
+  return `<circle cx="200" cy="200" r="150" fill="#fff" stroke="${INK}" stroke-width="2"/>
+    <circle cx="200" cy="200" r="140" fill="#D8382C"/>
+    <rect x="108" y="178" width="184" height="44" rx="4" fill="#fff"/>`;
+}
+
+function lantern(){
+  let s = `<line x1="200" y1="30" x2="200" y2="100" stroke="${INK}" stroke-width="4"/>
+    <ellipse cx="200" cy="208" rx="122" ry="98" fill="#D8382C" stroke="${INK}" stroke-width="5"/>
+    <ellipse cx="200" cy="208" rx="80" ry="98" fill="none" stroke="#9E2219" stroke-width="4"/>
+    <ellipse cx="200" cy="208" rx="38" ry="98" fill="none" stroke="#9E2219" stroke-width="4"/>
+    <path d="M200 170 L232 208 L200 246 L168 208 Z" fill="#F2C14E" stroke="${INK}" stroke-width="3"/>
+    <rect x="150" y="92" width="100" height="22" rx="6" fill="#E9A923" stroke="${INK}" stroke-width="4"/>
+    <rect x="160" y="300" width="80" height="20" rx="6" fill="#E9A923" stroke="${INK}" stroke-width="4"/>`;
+  [176,188,200,212,224].forEach(x => s += `<line x1="${x}" y1="322" x2="${x}" y2="372" stroke="#E9A923" stroke-width="5" stroke-linecap="round"/>`);
+  return s;
+}
+
+function paperCut(){
+  let s = `<circle cx="200" cy="200" r="158" fill="#C8322B"/>`;
+  for (let k = 0; k < 8; k++) {
+    s += `<g transform="rotate(${k*45} 200 200)">
+      <path d="M200 192 C176 150 182 96 200 58 C218 96 224 150 200 192 Z" fill="#fff"/>
+      <circle cx="200" cy="112" r="7" fill="#C8322B"/>
+      <path d="M200 150 L208 164 L200 178 L192 164 Z" fill="#C8322B"/></g>`;
+  }
+  for (let k = 0; k < 16; k++) {
+    const a = (k * 22.5 + 22.5/2) * Math.PI / 180;
+    s += `<circle cx="${200 + 138*Math.sin(a)}" cy="${200 - 138*Math.cos(a)}" r="7" fill="#fff"/>`;
+  }
+  s += `<circle cx="200" cy="200" r="34" fill="#C8322B"/><circle cx="200" cy="200" r="16" fill="#fff"/>`;
+  return s;
+}
+
+function trickSign(){
+  return `<circle cx="200" cy="200" r="152" fill="#fff" stroke="${INK}" stroke-width="2"/>
+    <circle cx="200" cy="200" r="128" fill="#fff" stroke="#D8382C" stroke-width="26"/>
+    <line x1="111" y1="111" x2="289" y2="289" stroke="#D8382C" stroke-width="26"/>`;
+}
+
+const mirror4 = s => s + `<g transform="translate(400 0) scale(-1 1)">${s}</g><g transform="translate(0 400) scale(1 -1)">${s}</g><g transform="translate(400 400) scale(-1 -1)">${s}</g>`;
+function lattice(){
+  const q = [[200,50],[125,50],[125,100],[75,100],[75,150],[25,150],[25,200]];
+  const bl = q.map(([x, y]) => [x, 400 - y]).reverse();
+  const br = q.map(([x, y]) => [400 - x, 400 - y]);
+  const tr = q.map(([x, y]) => [400 - x, y]).reverse();
+  const pts = [...q, ...bl.slice(1), ...br.slice(1), ...tr.slice(1, -1)];
+  let s = '';
+  s += `<polygon points="${pts.map(p => p.join(',')).join(' ')}" fill="#F6EBDD" fill-opacity=".6" stroke="#6B4226" stroke-width="13" stroke-linejoin="miter"/>`;
+  return s;
+}
+const foldShapes = [
+  { name:'窗格圖案', sym:{ v:true, h:true }, art:lattice() },
+  { name:'蝴蝶', sym:{ v:true, h:false }, art:butterfly() },
+  { name:'窗花剪紙', sym:{ v:true, h:true }, art:paperCut() },
+  { name:'燈籠', sym:{ v:true, h:false }, art:lantern() },
+  { name:'禁止駛入', sym:{ v:true, h:true }, art:noEntry() },
+  { name:'京劇臉譜', sym:{ v:true, h:false }, art:mask() },
+  { name:'考考你', sym:{ v:false, h:false }, art:trickSign(), trick:true }
+];
+const AXW = { v:'豎直', h:'水平' };
+let foldIdx = 0, foldAngle = 0, foldAxis = 'v';
+let tested = foldShapes.map(() => ({}));
+const foldAnim = makeAnimator();
+const foldSvg = $('#foldSvg');
+
+function buildFoldPick(){
+  $('#foldPick').innerHTML = foldShapes.map((s, i) =>
+    `<button aria-pressed="${i === foldIdx}" data-i="${i}"><svg viewBox="0 0 400 400" aria-hidden="true">${s.art}</svg>${s.name}</button>`).join('');
+  $('#foldPick').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    foldIdx = +b.dataset.i; foldAxis = 'v'; foldAnim.stop(); buildFoldPick(); buildFold(); setFold(0); playIdle();
+  }));
+  $('#foldAxisPick').innerHTML = ['v', 'h'].map(ax => {
+    const r = tested[foldIdx][ax];
+    return `<button aria-pressed="${ax === foldAxis}" data-ax="${ax}">${AXW[ax]}摺 ${r === true ? '✓' : r === false ? '✗' : ''}</button>`;
+  }).join('');
+  $('#foldAxisPick').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    foldAxis = b.dataset.ax; foldAnim.stop(); buildFoldPick(); buildFold(); setFold(0); playIdle();
+  }));
+}
+
+function buildFold(){
+  const s = foldShapes[foldIdx], vert = foldAxis === 'v';
+  const keep = vert ? 'x="-10" y="-10" width="210" height="420"' : 'x="-10" y="-10" width="420" height="210"';
+  const move = vert ? 'x="200" y="-10" width="210" height="420"' : 'x="-10" y="200" width="420" height="210"';
+  foldSvg.innerHTML = `
+    <defs><clipPath id="clipL"><rect ${keep}/></clipPath><clipPath id="clipR"><rect ${move}/></clipPath></defs>
+    <g clip-path="url(#clipL)">${s.art}</g>
+    <g id="flap"><g clip-path="url(#clipR)">${s.art}</g></g>
+    <g id="answerAxes" style="display:none">
+      <line x1="60" y1="60" x2="340" y2="340" stroke="#2F5BD3" stroke-width="4" stroke-dasharray="10 8"/>
+      <line x1="340" y1="60" x2="60" y2="340" stroke="#2F5BD3" stroke-width="4" stroke-dasharray="10 8"/>
+    </g>
+    <g id="foldAxis">
+      ${vert ? '<line x1="200" y1="6" x2="200" y2="396" stroke="#D43A2F" stroke-width="3" stroke-dasharray="9 7"/><text x="210" y="24" font-size="15" font-weight="700" fill="#D43A2F">摺線</text>'
+             : '<line x1="6" y1="200" x2="396" y2="200" stroke="#D43A2F" stroke-width="3" stroke-dasharray="9 7"/><text x="10" y="190" font-size="15" font-weight="700" fill="#D43A2F">摺線</text>'}
+    </g>`;
+}
+
+function setFold(a, quiet){
+  foldAngle = a;
+  const c = Math.cos(a * Math.PI / 180).toFixed(4);
+  const flap = $('#flap');
+  flap.setAttribute('transform', foldAxis === 'v' ? `translate(200 0) scale(${c} 1) translate(-200 0)` : `translate(0 200) scale(1 ${c}) translate(0 -200)`);
+  flap.setAttribute('opacity', (1 - .35 * a / 180).toFixed(3));
+  $('#foldRange').value = Math.round(a);
+  $('#foldVal').textContent = Math.round(a) + '°';
+  $('#foldReadout').textContent = '翻摺角度 ' + Math.round(a) + '°';
+  if (quiet) return;
+  const s = foldShapes[foldIdx], msg = $('#foldMsg'), T = tested[foldIdx];
+  if (a >= 179.5) {
+    const ok = s.sym[foldAxis];
+    const first = T[foldAxis] === undefined;
+    T[foldAxis] = ok;
+    if (first) buildFoldPick();
+    let txt = ok
+      ? `完全重合！沿${AXW[foldAxis]}的摺線對摺，兩邊完全重合，所以這條摺線是對稱軸。`
+      : `對不上！沿${AXW[foldAxis]}的摺線對摺，兩邊不能完全重合，所以這條摺線<b>不是</b>對稱軸。`;
+    const other = foldAxis === 'v' ? 'h' : 'v';
+    if (T[other] === undefined) txt += `<br>再按「${AXW[other]}摺」試試另一條摺線。`;
+    else {
+      const n = (T.v ? 1 : 0) + (T.h ? 1 : 0);
+      if (n === 2) txt += `<br><b>「${s.name}」有 2 條對稱軸：豎直和水平。</b>`;
+      else if (n === 1) txt += `<br><b>「${s.name}」只有 1 條對稱軸（${T.v ? '豎直' : '水平'}）。</b>`;
+      else txt += `<br>豎直和水平都不是對稱軸。想一想：它的對稱軸在哪裏？<br><button class="btn" id="showAns">看答案</button>`;
+    }
+    msg.className = 'msg ' + (ok ? 'ok' : 'bad');
+    msg.innerHTML = txt;
+    const sa = $('#showAns');
+    if (sa) sa.addEventListener('click', () => {
+      $('#answerAxes').style.display = '';
+      $('#foldAxis').style.display = 'none';
+      foldAnim.run(foldAngle, 0, 700, x => setFold(x, true));
+      msg.className = 'msg ok';
+      msg.innerHTML = '答案：沿著斜線對摺，或者沿和斜線垂直的藍色虛線對摺，兩邊都能完全重合。這個標誌也有 2 條對稱軸，只是它們是斜的。';
+    });
+  } else if (a > 0) {
+    msg.className = 'msg';
+    msg.textContent = `沿${AXW[foldAxis]}的摺線翻摺中……留意翻過去的部分會落在哪裏。`;
+  } else {
+    msg.className = 'msg';
+    msg.textContent = '先猜一猜：這個圖形有幾條對稱軸？然後分別按「豎直摺」和「水平摺」，再按「播放」驗證。';
+  }
+}
+
+$('#foldRange').addEventListener('input', e => { foldAnim.stop(); resetAnswer(); setFold(+e.target.value); playIdle(); });
+function resetAnswer(){ const g = $('#answerAxes'); if (g) { g.style.display = 'none'; $('#foldAxis').style.display = ''; } }
+function playIdle(){ const b = $('#foldPlay'); b.disabled = false; b.textContent = '▶ 播放'; }
+$('#foldPlay').addEventListener('click', () => {
+  resetAnswer();
+  const from = foldAngle >= 179.5 ? 0 : foldAngle;
+  const b = $('#foldPlay'); b.disabled = true; b.textContent = '播放中…';
+  foldAnim.run(from, 180, 2200 * (180 - from) / 180 + 200, setFold, playIdle);
+});
+$('#foldReset').addEventListener('click', () => { foldAnim.stop(); resetAnswer(); setFold(0); playIdle(); });
+
+buildFoldPick(); buildFold(); setFold(0);
+
+/* =========================================================
+   shared grid helpers (12 × 12)
+   ========================================================= */
+const G = 30, O = 20;
+const P = v => O + v * G;
+function gridSVG(){
+  let s = `<rect x="${P(0)}" y="${P(0)}" width="${12*G}" height="${12*G}" fill="#FFFFFF"/>`;
+  for (let i = 0; i <= 12; i++) {
+    s += `<line x1="${P(i)}" y1="${P(0)}" x2="${P(i)}" y2="${P(12)}" stroke="#D7E2EF" stroke-width="1"/>`;
+    s += `<line x1="${P(0)}" y1="${P(i)}" x2="${P(12)}" y2="${P(i)}" stroke="#D7E2EF" stroke-width="1"/>`;
+  }
+  return s + `<rect x="${P(0)}" y="${P(0)}" width="${12*G}" height="${12*G}" fill="none" stroke="#8C9BB3" stroke-width="1.5"/>`;
+}
+const label = (x, y, t, color, anchor = 'middle') =>
+  `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle" font-size="15" font-weight="700" fill="${color}" stroke="#fff" stroke-width="4" paint-order="stroke">${t}</text>`;
+
+/* =========================================================
+   找對稱點（先自己點，翻過去才驗證）
+   ========================================================= */
+const levels = [
+  { name:'教師例子（一）', N:8, axes:['v','h'], pts:[['A',4,1],['B',1,1],['C',2,4]] },
+  { name:'教師例子（二）', N:8, axes:['v','h'], pts:[['A',4,1],['B',1,1],['C',1,3],['D',3,4]] },
+  { name:'A1', N:8, axes:['v','h'], pts:[['A',4,1],['B',3,1],['C',2,2],['D',1,1],['E',1,3],['F',2,3],['G',1,4]] },
+  { name:'A2', N:8, axes:['v','h'], pts:[['A',4,0],['B',3,2],['C',1,0],['D',2,2],['E',0,3],['F',3,3],['G',1,4]] },
+  { name:'練習 1', N:8, axes:['v','h'], pts:[['A',4,0],['B',3,0],['C',3,3],['D',1,3],['E',1,4]] },
+  { name:'練習 2', N:8, axes:['v','h'], pts:[['A',4,0],['B',3,1],['C',3,2],['D',1,2],['E',3,3],['F',0,4]] },
+  { name:'練習 3', N:8, axes:['v','h'], pts:[['A',4,0],['B',1,0],['C',3,1],['D',3,3],['E',1,2],['F',1,4]] },
+  { name:'練習 4', N:8, axes:['v','h'], pts:[['A',4,2],['B',3,1],['C',3,2],['D',0,1],['E',2,2],['F',1,3],['G',2,4]] }
+];
+const AXNAME = { v:'豎直的對稱軸', h:'水平的對稱軸', d:'斜的對稱軸', a:'斜的對稱軸' };
+function reflect(ax, N, x, y){
+  if (ax === 'v') return [N - x, y];
+  if (ax === 'h') return [x, N - y];
+  if (ax === 'd') return [y, x];
+  return [N - y, N - x];
+}
+function foldPt(ax, N, x, y, ang){
+  const c = Math.cos(ang * Math.PI / 180), m = N / 2;
+  if (ax === 'v') return [m + (x - m) * c, y];
+  if (ax === 'h') return [x, m + (y - m) * c];
+  if (ax === 'd') { const s = (x + y) / 2, k = (x - y) / 2; return [s + k * c, s - k * c]; }
+  const k = (x + y - N) / 2; return [x - k + k * c, y - k + k * c];
+}
+function buildLevel(L){
+  let S = L.pts.map(([n, x, y]) => ({ key:n, label:n, base:n, tf:'', x, y, given:true }));
+  const stageBase = [];
+  for (const ax of L.axes) {
+    stageBase.push(S.map(p => [p.x, p.y]));
+    const R = S.map(p => {
+      const [x, y] = reflect(ax, L.N, p.x, p.y);
+      const self = x === p.x && y === p.y;
+      return { key:p.key + ax, base:p.base, tf:p.tf + ax, x, y, parent:p, ax, given:self, label:p.label };
+    }).reverse();
+    S = S.concat(R.slice(1));
+  }
+  const f = S[0], l = S[S.length - 1];
+  if (l.x === f.x && l.y === f.y) S.pop();
+  S.forEach(p => { if (!p.given) p.label = p.base + (p.tf.length >= 2 ? '‴' : p.tf === L.axes[0] ? '′' : '″'); });
+  const rank = p => '′″‴'.indexOf(p.label.slice(-1));
+  const targets = S.filter(p => !p.given).sort((a, b) => rank(a) - rank(b) || a.base.localeCompare(b.base));
+  return { full:S, targets, stageBase };
+}
+
+const pathsOf = L => L.paths || [L.pts];
+const onAx = (ax, N, x, y) => { const [a, b] = reflect(ax, N, x, y); return a === x && b === y; };
+function buildMulti(L){
+  const parts = pathsOf(L).map(pts => {
+    const last = pts[pts.length - 1];
+    return buildLevel({ N:L.N, axes:L.axes, pts: onAx(L.axes[0], L.N, last[1], last[2]) ? pts : pts.slice().reverse() });
+  });
+  const rank = p => '′″‴'.indexOf(p.label.slice(-1));
+  const targets = parts.flatMap(pt => pt.targets).sort((a, b) => rank(a) - rank(b) || a.base.localeCompare(b.base));
+  return { parts, targets };
+}
+let sel = null, hintSeg = null, hintTimer = null, stage = 0;
+let lv = 0, cur = null, placed = new Map(), checked = false, flipA = 0, dragging = null, flipping = false;
+const stageOf = p => levels[lv].axes.indexOf(p.ax);
+const stageT = () => cur.targets;
+const nextTarget = () => stageT().find(p => !placed.has(p.key));
+const selTarget = () => stageT().find(p => p.key === sel) || nextTarget();
+function advanceSel(fromKey){
+  const tg = stageT(), i = tg.findIndex(p => p.key === fromKey);
+  for (let j = 1; j <= tg.length; j++) { const p = tg[(i + j) % tg.length]; if (!placed.has(p.key)) return p.key; }
+  return null;
+}
+const levelDone = levels.map(() => false);
+const labAnim = makeAnimator();
+const labSvg = $('#labSvg');
+labSvg.innerHTML = `<defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#D43A2F"/></marker></defs>
+  <g id="labMain"></g><circle id="hoverDot" r="9" fill="none" stroke="#2F5BD3" stroke-width="2" opacity="0" pointer-events="none"/>`;
+
+const LGs = () => 360 / levels[lv].N;
+const Q = v => O + v * LGs();
+const isRight = p => { const s = placed.get(p.key); return !!s && s[0] === p.x && s[1] === p.y; };
+
+function labelOffset(x, y){
+  const c = levels[lv].N / 2;
+  let dx = x - c, dy = y - c;
+  if (dx === 0 && dy === 0) { dx = 1; dy = -1; }
+  const len = Math.hypot(dx, dy);
+  return [dx / len * 17, dy / len * 17];
+}
+
+function connector(par, t){
+  const x1 = Q(par.x), y1 = Q(par.y), x2 = Q(t.x), y2 = Q(t.y), c = levels[lv].N / 2;
+  const fx = (x1 + x2) / 2, fy = (y1 + y2) / 2;
+  const len = Math.hypot(x2 - x1, y2 - y1); if (!len) return '';
+  const ux = (x2 - x1) / len, uy = (y2 - y1) / len, wx = -uy, wy = ux;
+  let s = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#16794B" stroke-width="1.8" stroke-dasharray="5 4"/>`;
+  s += `<path d="M${fx + ux*8} ${fy + uy*8} L${fx + ux*8 + wx*8} ${fy + uy*8 + wy*8} L${fx + wx*8} ${fy + wy*8}" fill="none" stroke="#16794B" stroke-width="1.5"/>`;
+  return s;
+}
+
+function axisLine(ax, N){
+  const a = Q(0) - 8, b = Q(N) + 8, m = Q(N / 2);
+  const c = ax === 'v' ? [m, a, m, b] : ax === 'h' ? [a, m, b, m] : ax === 'd' ? [a, a, b, b] : [b, a, a, b];
+  return `<line x1="${c[0]}" y1="${c[1]}" x2="${c[2]}" y2="${c[3]}" stroke="#D43A2F" stroke-width="2.5" stroke-dasharray="7 6"/>`;
+}
+
+function labGrid(L){
+  const N = L.N;
+  let s = `<rect x="${Q(0)}" y="${Q(0)}" width="360" height="360" fill="#FFFFFF" stroke="#8C9BB3" stroke-width="1.5"/>`;
+  for (let i = 1; i < N; i++) {
+    s += `<line x1="${Q(i)}" y1="${Q(0)}" x2="${Q(i)}" y2="${Q(N)}" stroke="#D7E2EF"/>`;
+    s += `<line x1="${Q(0)}" y1="${Q(i)}" x2="${Q(N)}" y2="${Q(i)}" stroke="#D7E2EF"/>`;
+  }
+  return s;
+}
+
+function renderLab(){
+  const L = levels[lv], N = L.N, tg = stageT(), lastStage = stage === L.axes.length - 1;
+  let s = labGrid(L);
+  const stageRight = checked && tg.every(isRight);
+  if (stageRight && lastStage) s += `<path d="${cur.parts.map(pt => 'M' + pt.full.map(p => Q(p.x) + ' ' + Q(p.y)).join(' L') + ' Z').join(' ')}" fill="#16794B" fill-opacity=".14" fill-rule="evenodd"/>`;
+  L.axes.forEach(ax => s += axisLine(ax, N));
+
+  // lines: confirmed parts in dark, the student's current points in blue
+  const pos = p => p.given ? [p.x, p.y] : placed.get(p.key);
+  const okPt = p => p.given || isRight(p);
+  cur.parts.forEach(pt => {
+    const F = pt.full;
+    for (let i = 0; i < F.length; i++) {
+      const A = F[i], B = F[(i + 1) % F.length], a = pos(A), b = pos(B);
+      if (!a || !b) continue;
+      const inStage = !A.given || !B.given;
+      let col = '#3B4A66', dash = '';
+      if (inStage) {
+        if (!checked) col = '#2F5BD3';
+        else if (okPt(A) && okPt(B)) col = '#16794B';
+        else { col = '#E8A39C'; dash = 'stroke-dasharray="6 5"'; }
+      }
+      s += `<line x1="${Q(a[0])}" y1="${Q(a[1])}" x2="${Q(b[0])}" y2="${Q(b[1])}" stroke="${col}" stroke-width="2.8" stroke-linecap="round" ${dash}/>`;
+    }
+  });
+
+  if (hintSeg) hintSeg.forEach(([a, b]) => s += `<line class="ghost" x1="${Q(a[0])}" y1="${Q(a[1])}" x2="${Q(b[0])}" y2="${Q(b[1])}" stroke="#E08A00" stroke-width="5" stroke-dasharray="9 6" stroke-linecap="round"/>`);
+
+  L.axes.forEach((ax, ai) => { const fa = Math.max(0, Math.min(180, flipA - 180 * ai)); if (fa > 0) cur.parts.forEach(pt => {
+    const fp = pt.stageBase[ai].map(([x, y]) => foldPt(ax, N, x, y, fa));
+    s += `<polyline points="${fp.map(([x, y]) => Q(x) + ',' + Q(y)).join(' ')}" fill="none" stroke="#E08A00" stroke-width="4" stroke-linejoin="round" opacity=".75"/>`;
+    fp.forEach(([x, y]) => s += `<circle cx="${Q(x)}" cy="${Q(y)}" r="7" fill="#F2B630" stroke="#B7791F" stroke-width="2"/>`);
+  }); });
+
+  if (checked) tg.forEach(p => {
+    if (isRight(p)) return;
+    const [sx, sy] = placed.get(p.key);
+    const x1 = Q(sx), y1 = Q(sy), x2 = Q(p.x), y2 = Q(p.y), len = Math.hypot(x2 - x1, y2 - y1);
+    if (len > 0) s += `<line x1="${x1}" y1="${y1}" x2="${x2 - (x2 - x1) / len * 10}" y2="${y2 - (y2 - y1) / len * 10}" stroke="#D43A2F" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arr)"/>`;
+    const [ox, oy] = labelOffset(p.x, p.y);
+    s += label(Q(p.x) + ox, Q(p.y) + oy, p.label, '#B7791F');
+  });
+
+  // highlight the point being mirrored
+  const st = (!checked && !flipping) ? selTarget() : null;
+  if (st) s += `<circle cx="${Q(st.parent.x)}" cy="${Q(st.parent.y)}" r="14" fill="#F2B630" fill-opacity=".3" stroke="#E08A00" stroke-width="3"/>`;
+
+  pathsOf(L).flat().forEach(([n, x, y]) => {
+    const [ox, oy] = labelOffset(x, y);
+    s += `<circle cx="${Q(x)}" cy="${Q(y)}" r="5.5" fill="#1F3B2D"/>` + label(Q(x) + ox, Q(y) + oy, n, '#1F2A44');
+  });
+  cur.targets.filter(p => stageOf(p) < stage).forEach(p => {
+    const [ox, oy] = labelOffset(p.x, p.y);
+    s += `<circle cx="${Q(p.x)}" cy="${Q(p.y)}" r="5.5" fill="#1F3B2D"/>` + label(Q(p.x) + ox, Q(p.y) + oy, p.label, '#1F2A44');
+  });
+
+  tg.forEach(p => {
+    const sp = placed.get(p.key); if (!sp) return;
+    const [sx, sy] = sp, [ox, oy] = labelOffset(sx, sy);
+    if (checked && !isRight(p)) {
+      s += `<g stroke="#D43A2F" stroke-width="3.5" stroke-linecap="round"><line x1="${Q(sx) - 8}" y1="${Q(sy) - 8}" x2="${Q(sx) + 8}" y2="${Q(sy) + 8}"/><line x1="${Q(sx) + 8}" y1="${Q(sy) - 8}" x2="${Q(sx) - 8}" y2="${Q(sy) + 8}"/></g>`;
+      s += label(Q(sx) + ox, Q(sy) + oy, p.label + '？', '#D43A2F');
+    } else {
+      const col = checked ? '#16794B' : '#2F5BD3';
+      s += `<circle cx="${Q(sx)}" cy="${Q(sy)}" r="7" fill="${col}" ${dragging === p.key ? 'stroke="#F2B630" stroke-width="3"' : ''}/>`;
+      s += label(Q(sx) + ox, Q(sy) + oy, p.label + (checked ? ' ✓' : ''), col);
+    }
+  });
+  $('#labMain').innerHTML = s;
+
+  const nt = nextTarget(), names = tg.map(p => p.label).join('、');
+  const done = tg.filter(p => placed.has(p.key)).length;
+  $('#labTask').innerHTML = L.axes.length > 1
+    ? `這個圖形有兩條對稱軸。點出 ${names}，把整個圖形補完整，不用跟次序。<br>揀一個字母，<span style="color:#B7791F;font-weight:700">橙色圈</span>會標出它對應的點。`
+    : `點出 ${names}，把「${L.name}」的圖形補完整。`;
+  $('#labProgress').textContent = checked
+    ? `答對 ${tg.filter(isRight).length} / ${tg.length} 個`
+    : nt ? `已點出 ${done} / ${tg.length} 個${selTarget() ? `，現在點：${selTarget().label}` : ''}` : `已點出全部 ${tg.length} 個，可以驗證了`;
+  const curSel = (checked || flipping) ? null : (selTarget() || {}).key;
+  $('#labChips').innerHTML = tg.map(p => `<button class="chip${placed.has(p.key) ? ' placed' : ''}" aria-pressed="${p.key === curSel}" data-k="${p.key}" ${checked || flipping ? 'disabled' : ''}>${p.label}</button>`).join('');
+  $('#labChips').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    sel = b.dataset.k; const t = selTarget();
+    setLabMsg(`現在點：${t.label}，它是 ${t.parent.label} 沿${AXNAME[t.ax]}翻過去的點。在格子交點上按一下${placed.has(t.key) ? '，它會移到新位置' : ''}。`);
+    renderLab();
+  }));
+  const cb = $('#labCheck');
+  cb.disabled = !!nt || checked || flipping;
+  cb.textContent = flipping ? '翻摺中…' : '↔ 翻過去驗證';
+  $('#labUndo').disabled = checked || flipping || done === 0;
+  $('#labHint').disabled = checked || flipping || !nt;
+  $('#labLevels').innerHTML = levels.map((l, i) =>
+    `<button aria-pressed="${i === lv}" data-i="${i}"><span>${i + 1}. ${l.name}</span>${levelDone[i] ? '<span class="done">✓</span>' : ''}</button>`).join('');
+  $('#labLevels').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { lv = +b.dataset.i; resetLab(); }));
+}
+
+function hintText(t){
+  const pn = t.parent.label, ax = t.ax;
+  if (ax === 'v') return `先數一數：${pn} 離${AXNAME.v}多少格？${t.label} 要在對稱軸另一邊、同樣的距離，高度和 ${pn} 一樣。`;
+  if (ax === 'h') return `先數一數：${pn} 離${AXNAME.h}多少格？${t.label} 要在對稱軸另一邊、同樣的距離，左右位置和 ${pn} 一樣。`;
+  return `${t.label} 是 ${pn} 沿斜的對稱軸翻過去的點。`;
+}
+function setLabMsg(text, cls = ''){ const m = $('#labMsg'); m.className = 'msg ' + cls; m.innerHTML = text; }
+
+function resetLab(){
+  labAnim.stop();
+  cur = buildMulti(levels[lv]);
+  placed = new Map(); checked = false; flipA = 0; dragging = null; flipping = false; sel = null; stage = 0;
+  hintSeg = null; clearTimeout(hintTimer);
+  const ax = levels[lv].axes;
+  setLabMsg(ax.length > 1
+    ? '這個圖形有兩條對稱軸。先揀字母，再在格點上點出它的位置；點完全部再按「翻過去驗證」。點錯了可以拖動修改。'
+    : '先自己想：每個點到對稱軸的距離是多少？點完全部對稱點，再按「翻過去驗證」。');
+  renderLab();
+}
+
+function svgPoint(svg, e){
+  const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+function snap(e){
+  const q = svgPoint(labSvg, e), N = levels[lv].N, g = LGs();
+  const gx = Math.round((q.x - O) / g), gy = Math.round((q.y - O) / g);
+  return (gx < 0 || gx > N || gy < 0 || gy > N) ? null : [gx, gy];
+}
+
+labSvg.addEventListener('pointermove', e => {
+  const g = snap(e), dot = $('#hoverDot');
+  if (!g || checked || flipping) { dot.setAttribute('opacity', 0); return; }
+  dot.setAttribute('cx', Q(g[0])); dot.setAttribute('cy', Q(g[1])); dot.setAttribute('opacity', .8);
+  if (dragging) {
+    const c = placed.get(dragging);
+    if (c[0] !== g[0] || c[1] !== g[1]) { placed.set(dragging, g); renderLab(); }
+  }
+});
+labSvg.addEventListener('pointerleave', () => $('#hoverDot').setAttribute('opacity', 0));
+labSvg.addEventListener('pointerdown', e => {
+  if (checked || flipping) return;
+  const g = snap(e); if (!g) return;
+  const keys = stageT().map(t => t.key);
+  const grab = [...placed.entries()].find(([k, p]) => keys.includes(k) && p[0] === g[0] && p[1] === g[1]);
+  if (grab) { dragging = grab[0]; sel = grab[0]; labSvg.setPointerCapture(e.pointerId); renderLab(); return; }
+  const t = selTarget();
+  if (!t) { setLabMsg('全部點完了。要修改的話，按住點拖動，或者按字母再點新位置；確定後按「翻過去驗證」。'); return; }
+  const moved = placed.has(t.key);
+  placed.set(t.key, g);
+  sel = advanceSel(t.key);
+  const nn = selTarget();
+  if (!nextTarget()) setLabMsg('全部點完了！檢查一下，確定後按「翻過去驗證」。');
+  else setLabMsg(`${moved ? '已移動' : '已點出'} ${t.label}。下一個：${nn.label}（${nn.parent.label} 沿${AXNAME[nn.ax]}翻過去的點）。`);
+  renderLab();
+});
+const endDrag = () => { if (dragging) { dragging = null; renderLab(); } };
+labSvg.addEventListener('pointerup', endDrag);
+labSvg.addEventListener('pointercancel', endDrag);
+
+$('#labUndo').addEventListener('click', () => {
+  const ks = stageT().map(t => t.key);
+  const keys = [...placed.keys()].filter(k => ks.includes(k)); if (!keys.length) return;
+  const k = keys[keys.length - 1];
+  placed.delete(k); sel = k;
+  setLabMsg(`已復原。現在點：${selTarget().label}。`);
+  renderLab();
+});
+$('#labHint').addEventListener('click', () => {
+  const t = selTarget(); if (!t) return;
+  const part = cur.parts.find(pt => pt.full.includes(t));
+  const F = part.full, i = F.indexOf(t);
+  const at = p => [p.x, p.y];
+  hintSeg = [[at(F[(i - 1 + F.length) % F.length]), at(t)], [at(t), at(F[(i + 1) % F.length])]];
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => { hintSeg = null; renderLab(); }, 3000);
+  setLabMsg(`💡 留意閃動的兩條橙色線，它們連著 ${t.label}，3 秒後會消失。<br>${hintText(t)}`);
+  renderLab();
+});
+$('#labReset').addEventListener('click', resetLab);
+
+$('#labCheck').addEventListener('click', () => {
+  const axes = levels[lv].axes;
+  hintSeg = null; clearTimeout(hintTimer);
+  flipping = true;
+  setLabMsg(axes.length > 1 ? '看清楚：先沿豎直的對稱軸翻，再沿水平的對稱軸翻……' : '看清楚：沿對稱軸翻過去……');
+  renderLab();
+  labAnim.run(0, 180 * axes.length, 2400 * axes.length, a => { flipA = a; renderLab(); }, () => {
+    flipping = false; checked = true;
+    const tg = stageT(), right = tg.filter(isRight).length;
+    if (right === tg.length) {
+      if (false) {
+        setLabMsg(`第 ${stage + 1} 步完成，全部重合！<br><button class="btn" id="nextStage">下一步：沿${AXNAME[axes[stage + 1]]}翻</button>`, 'ok');
+        renderLab();
+        $('#nextStage').addEventListener('click', () => {
+          stage++; checked = false; flipA = 0; sel = null;
+          setLabMsg(`第 ${stage + 1} 步：沿${AXNAME[axes[stage]]}，把整個上半部分翻下去。先揀字母，再點出它的位置。`);
+          renderLab();
+        });
+        return;
+      }
+      levelDone[lv] = true;
+      setLabMsg(`全部重合，全對！你發現了嗎？<b>每一對對稱點到對稱軸的距離都相等</b>，而且兩點的連線和對稱軸互相垂直。` +
+        (lv < levels.length - 1 ? `<br><button class="btn" id="nextLv">下一關：${levels[lv + 1].name}</button>` : '<br>全部關卡完成，做得好！'), 'ok');
+      renderLab();
+      const nb = $('#nextLv'); if (nb) nb.addEventListener('click', () => { lv++; resetLab(); });
+    } else {
+      setLabMsg(`答對 ${right} / ${tg.length} 個。紅色 ✗ 是你點的位置，箭頭指向正確位置（橙色點）。數一數它們離對稱軸各有多少格？<br><button class="btn" id="retryLv">再試一次（保留答對的點）</button>`, 'bad');
+      renderLab();
+      $('#retryLv').addEventListener('click', () => {
+        stageT().forEach(p => { if (!isRight(p)) placed.delete(p.key); });
+        checked = false; flipA = 0; sel = null;
+        setLabMsg(`改正答錯的點，現在點：${selTarget().label}。`);
+        renderLab();
+      });
+    }
+  });
+});
+resetLab();
+
+/* =========================================================
+   補全圖形（豎直／水平／十字）
+   ========================================================= */
+const compShapes = [
+  { mode:'vh', name:'➕ 十字形', pts:[['A',1,6],['B',1,4],['C',4,4],['D',4,1],['E',6,1]] },
+  { mode:'vh', name:'工 字', pts:[['A',5,6],['B',5,3],['C',1,3],['D',1,1],['E',6,1]] },
+  { mode:'vh', name:'✦ 四角星', pts:[['A',1,6],['B',4,4],['C',6,1]] },
+  { mode:'vh', name:'八邊形', pts:[['A',1,6],['B',1,4],['C',4,1],['D',6,1]] }
+];
+const compModes = [['vh','十字']];
+let cmode = 'vh', cs = 0, compAngle = 0, cdata = null, cpair = null;
+const compAnim = makeAnimator();
+const shapesOf = m => compShapes.filter(s => s.mode === m);
+const compAxes = () => cmode === 'vh' ? ['v','h'] : [cmode];
+const compMax = () => 180 * compAxes().length;
+
+function loadComp(){
+  cpair = null;
+  cdata = buildLevel({ N:12, axes:compAxes(), pts:shapesOf(cmode)[cs].pts });
+  $('#compRange').max = compMax();
+  $('#compEndR').textContent = compAxes().length > 1 ? '完全展開（翻兩次）' : '完全展開 180°';
+}
+
+function buildCompPick(){
+  $('#compMode').innerHTML = compModes.map(([m, n]) => `<button aria-pressed="${m === cmode}" data-m="${m}">${n}</button>`).join('');
+  $('#compMode').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    cmode = b.dataset.m; cs = 0; compAnim.stop(); buildCompPick(); loadComp(); setComp(0); compIdle(false);
+  }));
+  $('#compPick').innerHTML = shapesOf(cmode).map((s, i) => `<button aria-pressed="${i === cs}" data-i="${i}">${s.name}</button>`).join('');
+  $('#compPick').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    cs = +b.dataset.i; compAnim.stop(); buildCompPick(); loadComp(); setComp(0); compIdle(false);
+  }));
+}
+
+function compOff(x, y){
+  let dx = x - 6, dy = y - 6;
+  if (dx === 0 && dy === 0) { dx = 1; dy = -1; }
+  const len = Math.hypot(dx, dy);
+  return [dx / len * 16, dy / len * 16];
+}
+
+function setComp(a){
+  compAngle = a;
+  const axes = compAxes(), k = axes.length, max = 180 * k;
+  const op = a >= max - 2 ? Math.min(0.45, $('#opRange').value / 100) : $('#opRange').value / 100;
+  const poly = arr => arr.map(([x, y]) => P(x) + ',' + P(y)).join(' ');
+  const stageA = i => Math.max(0, Math.min(180, a - 180 * i));
+  let s = gridSVG();
+
+  const given = cdata.stageBase[0];
+  s += `<polygon points="${poly(k > 1 ? given.concat([[6, 6]]) : given)}" fill="#F6CF5E" fill-opacity="${op}" stroke="#B7791F" stroke-width="2.5" stroke-linejoin="round"/>`;
+  axes.forEach((ax, i) => {
+    const ai = stageA(i);
+    if (i > 0 && ai <= 0) return;
+    let base = cdata.stageBase[i];
+    if (k > 1 && i === 0) base = base.concat([[6, 6]]);
+    const fp = base.map(([x, y]) => foldPt(ax, 12, x, y, ai));
+    const back = Math.cos(ai * Math.PI / 180) < 0;
+    s += `<polygon points="${poly(fp)}" fill="${back ? '#F3C445' : '#F6CF5E'}" fill-opacity="${op}" stroke="#B7791F" stroke-width="2.5" stroke-linejoin="round" ${ai >= 178 ? '' : 'stroke-dasharray="6 4"'}/>`;
+  });
+
+  const selT = cpair && cdata.targets.find(t => t.key === cpair && stageA(axes.indexOf(t.ax)) >= 178);
+  if (selT) {
+    const p = selT.parent, d = selT.ax === 'v' ? Math.abs(p.x - 6) : Math.abs(p.y - 6), col = '#2F5BD3';
+    const tag = (x, y, anchor) => `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle" font-size="17" font-weight="900" fill="${col}" stroke="#fff" stroke-width="5" paint-order="stroke">${d}格</text>`;
+    [[p.x, p.y], [selT.x, selT.y]].forEach(([x, y]) => s += `<circle cx="${P(x)}" cy="${P(y)}" r="13" fill="${col}" fill-opacity=".18" stroke="${col}" stroke-width="2.5"/>`);
+    if (selT.ax === 'v') {
+      const y = P(p.y);
+      s += `<line x1="${P(p.x)}" y1="${y}" x2="${P(selT.x)}" y2="${y}" stroke="${col}" stroke-width="3.5"/>`;
+      s += tag((P(p.x) + P(6)) / 2, y - 17, 'middle') + tag((P(6) + P(selT.x)) / 2, y - 17, 'middle');
+    } else {
+      const x = P(p.x);
+      s += `<line x1="${x}" y1="${P(p.y)}" x2="${x}" y2="${P(selT.y)}" stroke="${col}" stroke-width="3.5"/>`;
+      s += tag(x + 14, (P(p.y) + P(6)) / 2, 'start') + tag(x + 14, (P(6) + P(selT.y)) / 2, 'start');
+    }
+  }
+
+  axes.forEach(ax => {
+    s += ax === 'v'
+      ? `<line x1="${P(6)}" y1="${P(0) - 8}" x2="${P(6)}" y2="${P(12) + 8}" stroke="#D43A2F" stroke-width="2.5" stroke-dasharray="7 6"/>`
+      : `<line x1="${P(0) - 8}" y1="${P(6)}" x2="${P(12) + 8}" y2="${P(6)}" stroke="#D43A2F" stroke-width="2.5" stroke-dasharray="7 6"/>`;
+  });
+
+  axes.forEach((ax, i) => {
+    const ai = stageA(i);
+    if (ai <= 0) return;
+    cdata.stageBase[i].forEach(([x, y]) => { const [fx, fy] = foldPt(ax, 12, x, y, ai); s += `<circle cx="${P(fx)}" cy="${P(fy)}" r="5" fill="#D43A2F"/>`; });
+    if (ai >= 178) cdata.targets.filter(t => t.ax === ax).forEach(t => {
+      const [ox, oy] = compOff(t.x, t.y);
+      s += label(P(t.x) + ox, P(t.y) + oy, t.label, '#C9372C');
+    });
+  });
+  shapesOf(cmode)[cs].pts.forEach(([n, x, y]) => {
+    const [ox, oy] = compOff(x, y);
+    s += `<circle cx="${P(x)}" cy="${P(y)}" r="5" fill="#3B4A66"/>` + label(P(x) + ox, P(y) + oy, n, '#1F2A44');
+  });
+  $('#compSvg').innerHTML = s;
+
+  $('#compRange').value = Math.round(a);
+  const shown = k > 1 ? (a <= 180 ? `第1次 ${Math.round(a)}°` : `第2次 ${Math.round(a - 180)}°`) : `${Math.round(a)}°`;
+  $('#compVal').textContent = shown;
+  $('#compReadout').textContent = '翻摺角度 ' + shown;
+  const m = $('#compMsg');
+  if (a >= max - 2) {
+    m.className = 'msg ok';
+    m.innerHTML = k > 1
+      ? '補全完成！先沿豎直對稱軸翻摺，再沿水平對稱軸翻摺，就得到一個有兩條對稱軸的圖形。每個點和它的對稱點到對稱軸的距離都相等。'
+      : '補全完成！每個點和它的對稱點到對稱軸的距離都相等，連線和對稱軸互相垂直。';
+  } else if (k > 1 && a > 180) { m.className = 'msg'; m.textContent = '第二次翻摺：把上半部分沿水平對稱軸翻下去……'; }
+  else if (a > 0) { m.className = 'msg'; m.textContent = k > 1 ? '第一次翻摺：先沿豎直對稱軸翻過去……' : '翻摺中……紅點就是每個點翻過去的位置。'; }
+  else { m.className = 'msg'; m.textContent = '互動提示：把不透明度調低，可以看清楚圖形下面的格線，數一數每個點離對稱軸多少格。'; }
+  if (a >= max - 2 && !selT) m.innerHTML += '<br>按右邊「量一量距離」的字母，或者圖上的點，看看每對點離對稱軸多少格。';
+  if (selT && !compAnim.busy) {
+    const p = selT.parent, d = selT.ax === 'v' ? Math.abs(p.x - 6) : Math.abs(p.y - 6);
+    m.className = 'msg ok';
+    m.innerHTML = `<b>${p.label}</b> 離對稱軸 <b>${d} 格</b>，<b>${selT.label}</b> 也離對稱軸 <b>${d} 格</b>。兩點到對稱軸的距離相等！`;
+  }
+  const avail = cdata.targets.filter(t => stageA(axes.indexOf(t.ax)) >= 178);
+  $('#compPairs').innerHTML = avail.map(t => `<button class="chip" aria-pressed="${t.key === cpair}" data-k="${t.key}">${t.parent.label} ↔ ${t.label}</button>`).join('');
+  $('#compPairs').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { cpair = cpair === b.dataset.k ? null : b.dataset.k; setComp(compAngle); }));
+}
+$('#compSvg').addEventListener('pointerdown', e => {
+  if (compAnim.busy) return;
+  const axes = compAxes();
+  const q = svgPoint($('#compSvg'), e);
+  const done = t => compAngle - 180 * axes.indexOf(t.ax) >= 178;
+  let best = null, bd = 16;
+  const consider = (x, y, t) => { const d = Math.hypot(P(x) - q.x, P(y) - q.y); if (t && d < bd) { bd = d; best = t; } };
+  cdata.targets.filter(done).forEach(t => consider(t.x, t.y, t));
+  cdata.full.filter(p => p.given).forEach(p => consider(p.x, p.y, cdata.targets.find(t => t.parent === p && done(t))));
+  if (best) { cpair = cpair === best.key ? null : best.key; setComp(compAngle); }
+});
+
+function compIdle(replay){ const b = $('#compPlay'); b.disabled = false; b.textContent = replay ? '↻ 重新播放' : '▶ 開始補全'; }
+$('#compPlay').addEventListener('click', () => {
+  const max = compMax(), from = compAngle >= max - 2 ? 0 : compAngle;
+  cpair = null;
+  const b = $('#compPlay'); b.disabled = true; b.textContent = '補全中…';
+  compAnim.run(from, max, 2400 * (max - from) / 180 + 200, setComp, () => compIdle(true));
+});
+$('#compReset').addEventListener('click', () => { compAnim.stop(); cpair = null; setComp(0); compIdle(false); });
+$('#compRange').addEventListener('input', e => { compAnim.stop(); setComp(+e.target.value); compIdle(+e.target.value >= compMax() - 2); });
+$('#opRange').addEventListener('input', e => { $('#opVal').textContent = e.target.value + '%'; setComp(compAngle); });
+
+buildCompPick(); loadComp(); setComp(0);
+</script>
+</body>
+</html>
