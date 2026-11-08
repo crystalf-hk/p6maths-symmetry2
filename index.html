@@ -388,32 +388,55 @@ const foldShapes = [
   { name:'古錢幣', sym:{ v:true, h:true }, art:coin() },
   { name:'中國結', sym:{ v:true, h:true }, art:knot() },
   { name:'雪花', sym:{ v:true, h:true }, art:snowflake() },
-  { name:'禁止駛入', sym:{ v:true, h:true }, art:noEntry() }
+  { name:'禁止駛入', sym:{ v:true, h:true }, art:noEntry() },
+  { name:'考考你', sym:{ v:false, h:false }, art:trickSign(), trick:true }
 ];
-let foldIdx = 0, foldAngle = 0, foldTimer = null;
+let foldIdx = 0, foldAngle = 0, foldTimer = null, foldMode = 'cross';
 const foldAnim = makeAnimator();
 const foldSvg = $('#foldSvg');
+const DIAG = {
+  d: { keep:'-10,-10 -10,410 410,410', move:'-10,-10 410,-10 410,410', phi:-45 },
+  a: { keep:'-10,-10 410,-10 -10,410', move:'410,-10 410,410 -10,410', phi:45 }
+};
 
 function buildFoldPick(){
   $('#foldPick').innerHTML = foldShapes.map((s, i) =>
     `<button aria-pressed="${i === foldIdx}" data-i="${i}"><svg viewBox="0 0 400 400" aria-hidden="true">${s.art}</svg>${s.name}</button>`).join('');
   $('#foldPick').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-    foldIdx = +b.dataset.i; foldAnim.stop(); clearTimeout(foldTimer); buildFoldPick(); buildFold(); setFold(0); playIdle();
+    foldIdx = +b.dataset.i; foldAnim.stop(); clearTimeout(foldTimer); foldMode = 'cross'; buildFoldPick(); buildFold(); setFold(0); playIdle();
   }));
 }
 
 function buildFold(){
   const s = foldShapes[foldIdx];
+  const line = (x1, y1, x2, y2, col, op) => `<g opacity="${op}"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#fff" stroke-width="8" stroke-dasharray="9 7"/><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="3.5" stroke-dasharray="9 7"/></g>`;
+  if (foldMode !== 'cross') {
+    const M = DIAG[foldMode];
+    foldSvg.innerHTML = `
+      <defs><clipPath id="clipL"><polygon points="${M.keep}"/></clipPath><clipPath id="clipR"><polygon points="${M.move}"/></clipPath></defs>
+      <g clip-path="url(#clipL)">${s.art}</g>
+      <g id="flap"><g clip-path="url(#clipR)">${s.art}</g></g>
+      ${line(40, 40, 360, 360, '#2F5BD3', foldMode === 'd' ? 1 : .35)}${line(360, 40, 40, 360, '#2F5BD3', foldMode === 'a' ? 1 : .35)}`;
+    return;
+  }
   const cp = (id, x, y) => `<clipPath id="${id}"><rect x="${x}" y="${y}" width="210" height="210"/></clipPath>`;
-  const axis = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#fff" stroke-width="8" stroke-dasharray="9 7"/><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#D43A2F" stroke-width="3" stroke-dasharray="9 7"/>`;
   foldSvg.innerHTML = `
     <defs>${cp('cTL', -10, -10)}${cp('cTR', 200, -10)}${cp('cBL', -10, 200)}${cp('cBR', 200, 200)}</defs>
     <g clip-path="url(#cTL)">${s.art}</g>
     <g id="fTR"><g clip-path="url(#cTR)">${s.art}</g></g>
     <g id="fBL"><g clip-path="url(#cBL)">${s.art}</g></g>
     <g id="fBR"><g clip-path="url(#cBR)">${s.art}</g></g>
-    <g id="axV">${axis(200, 6, 200, 396)}</g>
-    <g id="axH">${axis(6, 200, 396, 200)}</g>`;
+    <g id="axV">${line(200, 6, 200, 396, '#D43A2F', 1)}</g>
+    <g id="axH">${line(6, 200, 396, 200, '#D43A2F', 1)}</g>`;
+}
+
+function setDiag(a){
+  foldAngle = a;
+  const c = Math.cos(a * Math.PI / 180).toFixed(4), phi = DIAG[foldMode].phi;
+  $('#flap').setAttribute('transform', `translate(200 200) rotate(${phi}) scale(${c} 1) rotate(${-phi}) translate(-200 -200)`);
+  $('#flap').setAttribute('opacity', (1 - .35 * a / 180).toFixed(3));
+  $('#foldVal').textContent = `斜摺 ${Math.round(a)}°`;
+  $('#foldReadout').textContent = `斜摺 ${Math.round(a)}°`;
 }
 
 function setFold(a){
@@ -433,34 +456,63 @@ function setFold(a){
   $('#foldReadout').textContent = txt;
   const s = foldShapes[foldIdx], msg = $('#foldMsg');
   if (a >= 359.5) {
-    msg.className = 'msg ok';
-    msg.innerHTML = `兩次都完全重合！「${s.name}」沿豎直對稱軸和水平對稱軸對摺，兩邊都能完全重合，所以它有 <b>2 條對稱軸</b>。`;
+    if (s.trick) {
+      msg.className = 'msg bad';
+      msg.innerHTML = '沿豎直和水平的虛線對摺，兩次都<b>不能</b>完全重合，所以它們都不是對稱軸。想一想：這個標誌的對稱軸在哪裏？<br><button class="btn" id="showAns">看答案</button>';
+      $('#showAns').addEventListener('click', showAnswer);
+    } else {
+      msg.className = 'msg ok';
+      msg.innerHTML = `兩次都完全重合！「${s.name}」沿豎直對稱軸和水平對稱軸對摺，兩邊都能完全重合，所以它有 <b>2 條對稱軸</b>。`;
+    }
   } else if (a2 > 0) {
     msg.className = 'msg';
-    msg.textContent = '第 2 次：再沿水平對稱軸對摺，看看上下兩邊會不會完全重合……';
+    msg.textContent = '第 2 次：再沿水平的虛線對摺，看看上下兩邊會不會完全重合……';
   } else if (a1 >= 179.5) {
-    msg.className = 'msg ok';
-    msg.textContent = '第 1 次：沿豎直對稱軸對摺，左右兩邊完全重合！接著沿水平對稱軸摺……';
+    msg.className = s.trick ? 'msg bad' : 'msg ok';
+    msg.textContent = s.trick ? '第 1 次：沿豎直的虛線對摺，斜線方向不同，對不上！接著沿水平的虛線摺……' : '第 1 次：沿豎直對稱軸對摺，左右兩邊完全重合！接著沿水平對稱軸摺……';
   } else if (a1 > 0) {
     msg.className = 'msg';
-    msg.textContent = '第 1 次：沿豎直對稱軸對摺，看看左右兩邊會不會完全重合……';
+    msg.textContent = '第 1 次：沿豎直的虛線對摺，看看左右兩邊會不會完全重合……';
   } else {
     msg.className = 'msg';
-    msg.textContent = '先猜一猜：沿豎直和水平的對稱軸摺，兩次都會完全重合嗎？按「播放」驗證。';
+    msg.textContent = s.trick
+      ? '考考你：沿豎直和水平的虛線摺，兩邊能完全重合嗎？先猜一猜，再按「播放」驗證。'
+      : '先猜一猜：沿豎直和水平的對稱軸摺，兩次都會完全重合嗎？按「播放」驗證。';
   }
 }
 
+function showAnswer(){
+  const msg = $('#foldMsg'), b = $('#foldPlay');
+  foldAnim.stop(); clearTimeout(foldTimer);
+  b.disabled = true; b.textContent = '播放中…';
+  msg.className = 'msg ok';
+  msg.textContent = '答案：這個標誌的對稱軸是斜的。看看沿著斜線對摺……';
+  foldMode = 'd'; buildFold(); setDiag(0);
+  foldTimer = setTimeout(() => foldAnim.run(0, 180, 2200, setDiag, () => {
+    msg.textContent = '沿著斜線對摺，兩邊完全重合！再看看沿和斜線垂直的另一條線對摺……';
+    foldTimer = setTimeout(() => {
+      foldMode = 'a'; buildFold(); setDiag(0);
+      foldAnim.run(0, 180, 2200, setDiag, () => {
+        msg.innerHTML = '兩次都完全重合！沿著斜線，或者沿和斜線垂直的藍色虛線對摺，兩邊都能完全重合。這個標誌也有 <b>2 條對稱軸</b>，只是它們是斜的。<br><button class="btn" id="replayAns">再看一次</button>';
+        $('#replayAns').addEventListener('click', showAnswer);
+        playIdle();
+      });
+    }, 1200);
+  }), 500);
+}
+
+function resetAnswer(){ clearTimeout(foldTimer); if (foldMode !== 'cross') { foldMode = 'cross'; buildFold(); foldAngle = 0; } }
 function playIdle(){ const b = $('#foldPlay'); b.disabled = false; b.textContent = '▶ 播放'; }
-$('#foldRange').addEventListener('input', e => { foldAnim.stop(); clearTimeout(foldTimer); setFold(+e.target.value); playIdle(); });
+$('#foldRange').addEventListener('input', e => { foldAnim.stop(); resetAnswer(); setFold(+e.target.value); playIdle(); });
 $('#foldPlay').addEventListener('click', () => {
-  clearTimeout(foldTimer);
+  resetAnswer();
   const from = foldAngle >= 359.5 ? 0 : foldAngle;
   const b = $('#foldPlay'); b.disabled = true; b.textContent = '播放中…';
   const second = () => foldAnim.run(180, 360, 2200, setFold, playIdle);
   if (from < 180) foldAnim.run(from, 180, 2200 * (180 - from) / 180 + 200, setFold, () => { foldTimer = setTimeout(second, 900); });
   else foldAnim.run(from, 360, 2200 * (360 - from) / 180 + 200, setFold, playIdle);
 });
-$('#foldReset').addEventListener('click', () => { foldAnim.stop(); clearTimeout(foldTimer); setFold(0); playIdle(); });
+$('#foldReset').addEventListener('click', () => { foldAnim.stop(); resetAnswer(); setFold(0); playIdle(); });
 
 buildFoldPick(); buildFold(); setFold(0);
 
